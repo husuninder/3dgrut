@@ -42,6 +42,7 @@ torchmetrics = "*"
 kornia = "*"
 # Other required packages
 libigl = "*"
+viser = "*"
 usd-core = "*"
 opencv-python = "<4.12.0"
 imageio-ffmpeg = "*"
