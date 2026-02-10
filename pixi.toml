@@ -3,13 +3,16 @@ name = "sm3dgrut"
 version = "0.1.0"
 description = "3D Gaussian Ray Tracing and Unscented Transform - Minimal Python packages only"
 authors = ["NVIDIA"]
-channels = ["conda-forge", "nvidia]
+channels = ["conda-forge", "nvidia"]
 platforms = ["linux-64"]
 
 [dependencies]
 python = "3.11.*"
 pip = "*"
 cuda-toolkit = "==12.8.1"
+cmake = "*"
+ninja = "*"
+mesa-libgl-devel-cos7-x86_64 = "*"
 
 # Essential dependencies for running training
 hydra-core = "*"
@@ -24,7 +27,7 @@ rich = "*"
 einops = "*"
 imageio = "*"
 tqdm = "*"
-setuptools = "*"
+setuptools = "<72.1.0"
 addict = "*"
 msgpack-python = "*"
 dataclasses-json = "*"
@@ -40,7 +43,8 @@ kornia = "*"
 # Other required packages
 libigl = "*"
 usd-core = "*"
-opencv-python = "*"
+opencv-python = "<4.12.0"
+imageio-ffmpeg = "*"
 slangtorch = "==1.3.4"
 pygltflib = "*"
 polyscope = ">=2.3.0"
@@ -59,7 +63,11 @@ install-ppisp = "pip install --no-build-isolation git+https://github.com/nv-tlab
 install-package = "pip install --no-build-isolation -e ."
 
 # Complete installation (run after pixi install)
-install-all = { cmd = "pixi run init-submodules && pixi run install-fused-ssim && pixi run install-ppisp && pixi run install-package" }
+# Install kaolin from source (required for CUDA 12.8)
+install-kaolin = { cmd = "rm -rf thirdparty/kaolin && git clone --recursive https://github.com/NVIDIAGameWorks/kaolin.git thirdparty/kaolin && cd thirdparty/kaolin && git checkout c2da967b9e0d8e3ebdbd65d3e8464d7e39005203 && sed -i 's!AT_DISPATCH_FLOATING_TYPES_AND_HALF(feats_in.type()!AT_DISPATCH_FLOATING_TYPES_AND_HALF(feats_in.scalar_type()!g' kaolin/csrc/render/spc/raytrace_cuda.cu && pip install --upgrade pip && pip install --no-cache-dir ninja imageio imageio-ffmpeg && pip install --no-cache-dir -r tools/viz_requirements.txt -r tools/requirements.txt -r tools/build_requirements.txt && IGNORE_TORCH_VER=1 python setup.py install && cd ../.. && rm -rf thirdparty/kaolin" }
+
+# Complete installation (run after pixi install)
+install-all = { cmd = "pixi run init-submodules && pixi run install-fused-ssim && pixi run install-ppisp && pixi run install-kaolin && pixi run install-package" }
 
 # Training commands
 train = "python train.py"
