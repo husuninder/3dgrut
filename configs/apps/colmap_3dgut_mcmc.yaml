@@ -12,4 +12,4 @@ defaults:
 val_frequency: 999999 # never validate
 
 initialization:
-  use_observation_points: false
+  use_observation_points: true
