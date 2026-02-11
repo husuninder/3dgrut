@@ -6,6 +6,10 @@ authors = ["NVIDIA"]
 channels = ["conda-forge", "nvidia"]
 platforms = ["linux-64"]
 
+[activation]
+# This ensures the container's pre-installed paths are still visible
+scripts = ["inject_paths.sh"]
+
 [dependencies]
 python = "3.11.*"
 pip = "*"
