@@ -12,7 +12,7 @@ model:
 
 loss:
   use_opacity: true
-  lambda_opacity: 0.01
+  lambda_opacity: 0.001
 
   use_scale: true
   lambda_scale: 0.01
