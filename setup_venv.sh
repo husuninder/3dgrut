@@ -40,20 +40,27 @@ if ! command -v ninja &> /dev/null; then
     echo "Warning: ninja could not be found. It will be installed via pip, but system ninja is recommended."
 fi
 
-# Check for GCC-11
-if ! command -v gcc-11 &> /dev/null; then
-    echo "Error: gcc-11 could not be found. Please install it (e.g., 'sudo apt-get install gcc-11 g++-11')."
-    echo "The repository requires GCC 11 to compile CUDA extensions, but the system default is likely newer."
+# Check for GCC
+if ! command -v gcc &> /dev/null; then
+    echo "Error: gcc could not be found. Please install it."
     exit 1
 fi
 
-if ! command -v g++-11 &> /dev/null; then
-    echo "Error: g++-11 could not be found. Please install it."
+if ! command -v g++ &> /dev/null; then
+    echo "Error: g++ could not be found. Please install it."
     exit 1
 fi
 
-export CC=$(which gcc-11)
-export CXX=$(which g++-11)
+# Ideally want gcc-11 for older CUDA, but 12.8 supports newer GCC.
+# If gcc-11 specific binary exists, use it, otherwise fallback to system gcc.
+if command -v gcc-11 &> /dev/null; then
+    export CC=$(which gcc-11)
+    export CXX=$(which g++-11)
+else
+    export CC=$(which gcc)
+    export CXX=$(which g++)
+fi
+
 echo "Using GCC: $CC"
 echo "Using G++: $CXX"
 
