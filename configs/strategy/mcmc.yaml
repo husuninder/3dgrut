@@ -2,7 +2,7 @@ method: MCMCStrategy
 
 print_stats: true
 binom_n_max: 51 # Default value from MCMC paper (no good reason, just a large number https://github.com/ubc-vision/3dgs-mcmc/issues/8)
-opacity_threshold: 0.005 # Minimum opacity -> used to dermine if a Gaussian is alive or dead
+opacity_threshold: 0.0005 # orig: 0.005 # Minimum opacity -> used to dermine if a Gaussian is alive or dead
 
 relocate:
   start_iteration: 500 # Start applying the strategy after start_iteration training iterations
@@ -22,4 +22,4 @@ add:
   start_iteration: 500 # Start applying the strategy after start_iteration training iterations
   end_iteration: 25000 # Stop applying the strategy after end_iteration training iterations
   frequency: 100 # Apply the strategy every frequency iterations
-  max_n_gaussians: 1000000 # Maximum number of Gaussians
+  max_n_gaussians: 2000000 # Maximum number of Gaussians
