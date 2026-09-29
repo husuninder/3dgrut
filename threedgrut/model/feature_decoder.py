@@ -13,6 +13,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import os
+
 import tinycudann as tcnn
 import torch
 import torch.nn as nn
@@ -96,7 +98,9 @@ class FeatureDecoder(nn.Module):
             network_config=network_config,
         )
         if hasattr(tcnn, "supports_jit_fusion"):
-            self.network.jit_fusion = tcnn.supports_jit_fusion()
+            # TCNN_JIT=0 disables tiny-cuda-nn runtime-compiled fusion; it crashed with
+            # CUDA_ERROR_ILLEGAL_ADDRESS in cuModuleLoadDataEx on H100 (sm_90).
+            self.network.jit_fusion = tcnn.supports_jit_fusion() and os.environ.get("TCNN_JIT", "1") == "1"
 
         if self._ema_decay > 0:
             for name, param in self.named_parameters():
