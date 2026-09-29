@@ -111,9 +111,22 @@ class MCMCStrategy(BaseStrategy):
         # Get the per Gaussian densities and scales (after sigmoid)
         densities = self.model.get_density()
         # Find the dead indices
-        dead_idxs = torch.where(densities <= self.conf.strategy.opacity_threshold)[0]
-        alive_idxs = torch.where(densities > self.conf.strategy.opacity_threshold)[0]
+        dead = (densities <= self.conf.strategy.opacity_threshold).reshape(-1)
+        # Optional hemisphere bound (strategy.bounds): Gaussians outside it are treated as dead,
+        # so MCMC relocates them to live Gaussians inside; sky stays on the dome. Off unless strategy.bounds is set.
+        bounds = self.conf.strategy.get("bounds", None)
+        if bounds is not None:
+            pos = self.model.get_positions()
+            rel = pos - torch.tensor(list(bounds.center), device=pos.device, dtype=pos.dtype)
+            up = torch.tensor(list(bounds.up), device=pos.device, dtype=pos.dtype)
+            outside = (rel.norm(dim=1) > float(bounds.radius)) | ((rel @ up) < -float(bounds.margin_below))
+            n_outside = int(outside.sum())
+            dead |= outside
+        dead_idxs = torch.where(dead)[0]
+        alive_idxs = torch.where(~dead)[0]
         n_dead_gaussians = len(dead_idxs)
+        if bounds is not None and self.conf.strategy.print_stats:
+            logger.info(f"Out of bounds: {n_outside} ({n_outside / len(dead) * 100:.2f}%) gaussians")
 
         if n_dead_gaussians:
             sampled_idxs, new_densities, new_scales = self.sample_new_gaussians(n_dead_gaussians, alive_idxs)
