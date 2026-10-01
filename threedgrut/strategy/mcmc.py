@@ -112,22 +112,26 @@ class MCMCStrategy(BaseStrategy):
         densities = self.model.get_density()
         # Find the dead indices
         dead = (densities <= self.conf.strategy.opacity_threshold).reshape(-1)
-        # Optional bound (strategy.bounds): Gaussians outside it are treated as dead, so MCMC relocates them to
-        # live Gaussians inside. Hemisphere (center/up/radius/margin_below) keeps sky on a dome; an axis-aligned
-        # box (box_min/box_max) keeps a region tile's Gaussians in its own area. Off unless strategy.bounds is set.
+        # Optional bound (strategy.bounds), off unless set.
+        # Hemisphere (center/up/radius/margin_below): Gaussians outside count as dead and MCMC relocates them inside,
+        # so sky stays on a dome. Box (box_min/box_max, region tiles): Gaussians outside are clamped back onto the box,
+        # not killed. Killing ran away on tiles: relocation splits opacity across copies, transparent Gaussians get
+        # more perturb noise and leave again, until most of the tile was relocated each round and went transparent.
         bounds = self.conf.strategy.get("bounds", None)
         if bounds is not None:
             pos = self.model.get_positions()
             if bounds.get("box_min", None) is not None:
                 lo = torch.tensor(list(bounds.box_min), device=pos.device, dtype=pos.dtype)
                 hi = torch.tensor(list(bounds.box_max), device=pos.device, dtype=pos.dtype)
-                outside = ((pos < lo) | (pos > hi)).any(dim=1)
+                with torch.no_grad():
+                    n_outside = int(((pos < lo) | (pos > hi)).any(dim=1).sum())
+                    pos.data.copy_(torch.minimum(torch.maximum(pos.data, lo), hi))
             else:
                 rel = pos - torch.tensor(list(bounds.center), device=pos.device, dtype=pos.dtype)
                 up = torch.tensor(list(bounds.up), device=pos.device, dtype=pos.dtype)
                 outside = (rel.norm(dim=1) > float(bounds.radius)) | ((rel @ up) < -float(bounds.margin_below))
-            n_outside = int(outside.sum())
-            dead |= outside
+                n_outside = int(outside.sum())
+                dead |= outside
         dead_idxs = torch.where(dead)[0]
         alive_idxs = torch.where(~dead)[0]
         n_dead_gaussians = len(dead_idxs)
