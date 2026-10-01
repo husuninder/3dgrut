@@ -112,14 +112,20 @@ class MCMCStrategy(BaseStrategy):
         densities = self.model.get_density()
         # Find the dead indices
         dead = (densities <= self.conf.strategy.opacity_threshold).reshape(-1)
-        # Optional hemisphere bound (strategy.bounds): Gaussians outside it are treated as dead,
-        # so MCMC relocates them to live Gaussians inside; sky stays on the dome. Off unless strategy.bounds is set.
+        # Optional bound (strategy.bounds): Gaussians outside it are treated as dead, so MCMC relocates them to
+        # live Gaussians inside. Hemisphere (center/up/radius/margin_below) keeps sky on a dome; an axis-aligned
+        # box (box_min/box_max) keeps a region tile's Gaussians in its own area. Off unless strategy.bounds is set.
         bounds = self.conf.strategy.get("bounds", None)
         if bounds is not None:
             pos = self.model.get_positions()
-            rel = pos - torch.tensor(list(bounds.center), device=pos.device, dtype=pos.dtype)
-            up = torch.tensor(list(bounds.up), device=pos.device, dtype=pos.dtype)
-            outside = (rel.norm(dim=1) > float(bounds.radius)) | ((rel @ up) < -float(bounds.margin_below))
+            if bounds.get("box_min", None) is not None:
+                lo = torch.tensor(list(bounds.box_min), device=pos.device, dtype=pos.dtype)
+                hi = torch.tensor(list(bounds.box_max), device=pos.device, dtype=pos.dtype)
+                outside = ((pos < lo) | (pos > hi)).any(dim=1)
+            else:
+                rel = pos - torch.tensor(list(bounds.center), device=pos.device, dtype=pos.dtype)
+                up = torch.tensor(list(bounds.up), device=pos.device, dtype=pos.dtype)
+                outside = (rel.norm(dim=1) > float(bounds.radius)) | ((rel @ up) < -float(bounds.margin_below))
             n_outside = int(outside.sum())
             dead |= outside
         dead_idxs = torch.where(dead)[0]

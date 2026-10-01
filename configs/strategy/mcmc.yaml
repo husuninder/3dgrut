@@ -23,7 +23,7 @@ add:
   end_iteration: 25000 # Stop applying the strategy after end_iteration training iterations
   frequency: 100 # Apply the strategy every frequency iterations
   max_n_gaussians: 1000000 # Maximum number of Gaussians
-# Optional hemisphere bound (off when absent). Gaussians outside it are treated as dead and relocated inside,
+# Optional hemisphere or box bound (off when absent). Gaussians outside it are treated as dead and relocated inside,
 # so unbounded scenes keep their sky on a dome instead of spreading far out. World units = dataset units.
 # Set from the CLI, e.g.:
 #   +strategy.bounds.center=[x,y,z] +strategy.bounds.up=[x,y,z] +strategy.bounds.radius=9.0 +strategy.bounds.margin_below=0.15
@@ -32,3 +32,5 @@ add:
 #   up: [0.0, 0.0, 1.0]       # unit up vector
 #   radius: 10.0              # dome radius
 #   margin_below: 0.15        # allowed depth below the ground plane
+# or an axis-aligned box instead (region tiles), e.g.:
+#   +strategy.bounds.box_min=[-25,-4,-3] +strategy.bounds.box_max=[4,25,20]
